@@ -1454,6 +1454,15 @@ def rotateJob(job, degrees = 90, flip = 0, firstpass = True):
         # No, must be a string indicating aperture change, G-code, or RS274-X command.
         if cmd[0] in ('G', '%'):
           # G-codes and RS274-X commands are just copied verbatim and not affected by rotation
+          # [andreika]: G-codes are affected by flipping because the arc segment quadrant is inverted (CW<->CCW)
+          if (doFlip != 0):
+            match = gcode_pat.match(cmd)
+            if match:
+              gcode = int(match.group(1))
+              if (gcode == 2):
+                cmd = "G03"
+              elif (gcode == 3):
+                cmd = "G02"
           J.commands[layername].append(cmd)
           continue
 
@@ -1489,10 +1498,16 @@ def rotateJob(job, degrees = 90, flip = 0, firstpass = True):
       # and J becomes I. For 360-degree circular interpolation, I/J are signed and we
       # must map (I,J) --> (-J,I).
       if II is not None:
-        if signed:
-          J.commands[layername].append((newx, newy, -JJ, II, d, signed))
+        if (doFlip == 1):
+          newII = -II
+          newJJ = JJ
+        elif (doFlip == -1):
+          newII = II
+          newJJ = -JJ
         else:
-          J.commands[layername].append((newx, newy, JJ, II, d, signed))
+          newII = -JJ if (signed) else JJ
+          newJJ = II
+        J.commands[layername].append((newx, newy, newII, newJJ, d, signed))
       else:
         J.commands[layername].append((newx,newy,d))
 
