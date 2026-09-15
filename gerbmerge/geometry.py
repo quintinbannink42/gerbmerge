@@ -274,8 +274,10 @@ def rectHeight(rect):
 
 # Return center (X,Y) co-ordinates of rectangle.
 def rectCenter(rect):
-  dx = rectWidth(rect)
-  dy = rectHeight(rect)
+  # Coerce to int: metric/KiCad exports can yield float extents after clip,
+  # and Python 3 rejects float & int (TypeError). Round to nearest gerber unit.
+  dx = int(round(rectWidth(rect)))
+  dy = int(round(rectHeight(rect)))
 
   if dx & 1:    # Odd width: center is (left+right)/2 + 1/2
     X = (rect[0] + rect[2] + 1)/2
